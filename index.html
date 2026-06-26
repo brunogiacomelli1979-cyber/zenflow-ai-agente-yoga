@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZenFlow AI — Agente Inteligente para Estúdios de Yoga</title>
+  <meta name="description" content="Projeto de portfólio: agente inteligente para atendimento, vendas, pagamento e follow-up em estúdios de yoga usando n8n, Supabase, Trello, Asaas e IA." />
+
+  <style>
+    :root {
+      --bg: #071111;
+      --bg-soft: #0d1b1b;
+      --card: #102222;
+      --card-2: #132b2b;
+      --text: #f4f7f5;
+      --muted: #b9c9c3;
+      --accent: #65e4c6;
+      --accent-2: #8fb7ff;
+      --border: rgba(255, 255, 255, 0.12);
+      --shadow: rgba(0, 0, 0, 0.35);
+      --warning: #f0c36a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(101, 228, 198, 0.14), transparent 34%),
+        radial-gradient(circle at 80% 20%, rgba(143, 183, 255, 0.10), transparent 30%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .container {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(7, 17, 17, 0.82);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    nav {
+      min-height: 72px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .brand {
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      font-size: 1.1rem;
+    }
+
+    .brand span {
+      color: var(--accent);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .nav-links a:hover {
+      color: var(--accent);
+    }
+
+    .hero {
+      padding: 88px 0 48px;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.06fr 0.94fr;
+      gap: 34px;
+      align-items: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--accent);
+      background: rgba(101, 228, 198, 0.08);
+      font-size: 0.9rem;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      font-size: clamp(2.25rem, 6vw, 5rem);
+      line-height: 0.98;
+      letter-spacing: -0.07em;
+      margin-bottom: 24px;
+    }
+
+    .hero p {
+      color: var(--muted);
+      font-size: 1.12rem;
+      max-width: 720px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 30px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 13px 18px;
+      border-radius: 12px;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      transition: 0.2s ease;
+    }
+
+    .button.primary {
+      background: var(--accent);
+      color: #06201a;
+      border-color: transparent;
+    }
+
+    .button.secondary {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px var(--shadow);
+    }
+
+    .hero-card {
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 22px 60px var(--shadow);
+    }
+
+    .hero-card h2 {
+      margin-bottom: 16px;
+      font-size: 1.2rem;
+    }
+
+    .stack {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .stack-item {
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.045);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .stack-item strong {
+      display: block;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    section {
+      padding: 56px 0;
+    }
+
+    .section-title {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 26px;
+    }
+
+    .section-title h2 {
+      font-size: clamp(1.7rem, 3vw, 2.4rem);
+      letter-spacing: -0.04em;
+    }
+
+    .section-title p {
+      color: var(--muted);
+      max-width: 760px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.025));
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 22px;
+      min-height: 100%;
+    }
+
+    .card h3 {
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+    }
+
+    .card p, .card li {
+      color: var(--muted);
+    }
+
+    .card ul {
+      padding-left: 18px;
+      margin-top: 10px;
+    }
+
+    .tag-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .tag {
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(101, 228, 198, 0.08);
+      border: 1px solid rgba(101, 228, 198, 0.18);
+      color: var(--accent);
+      font-size: 0.86rem;
+    }
+
+    .flow {
+      background: var(--bg-soft);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .workflow-img-wrap {
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      overflow: hidden;
+      background: #0a0a0a;
+      box-shadow: 0 24px 80px var(--shadow);
+    }
+
+    .workflow-img-wrap img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 12px;
+      counter-reset: step;
+    }
+
+    .timeline-item {
+      counter-increment: step;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .timeline-item::before {
+      content: counter(step);
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--accent);
+      color: #06201a;
+      font-weight: 800;
+    }
+
+    .timeline-item strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .timeline-item span {
+      color: var(--muted);
+    }
+
+    .notice {
+      border: 1px solid rgba(240, 195, 106, 0.28);
+      background: rgba(240, 195, 106, 0.08);
+      border-radius: 22px;
+      padding: 22px;
+      color: var(--muted);
+    }
+
+    .notice strong {
+      color: var(--warning);
+    }
+
+    footer {
+      padding: 36px 0;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    footer .container {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 900px) {
+      .hero-grid,
+      .grid-3,
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      nav {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 18px 0;
+      }
+
+      .nav-links {
+        justify-content: flex-start;
+      }
+
+      .hero {
+        padding-top: 56px;
+      }
+
+      .stack {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="container">
+      <nav>
+        <a class="brand" href="#">ZenFlow <span>AI</span></a>
+        <div class="nav-links">
+          <a href="#problema">Problema</a>
+          <a href="#solucao">Solução</a>
+          <a href="#workflow">Workflow</a>
+          <a href="#documentacao">Documentação</a>
+          <a href="#seguranca">Segurança</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <div class="eyebrow">Projeto de portfólio · Agente de IA · n8n</div>
+          <h1>Agente inteligente para estúdios de yoga</h1>
+          <p>
+            O ZenFlow AI é uma arquitetura de automação com IA para atendimento, qualificação de leads,
+            vendas, pagamento e follow-up em estúdios de yoga. O projeto combina WhatsApp, n8n,
+            Supabase, Trello, Asaas e IA generativa em uma jornada única.
+          </p>
+
+          <div class="hero-actions">
+            <a class="button primary" href="README.md">Ver README</a>
+            <a class="button secondary" href="n8n/ZenFlow%20AI%20%E2%80%94%20Portfolio.json">Ver workflow JSON</a>
+          </div>
+
+          <div class="tag-row">
+            <span class="tag">AI Agent</span>
+            <span class="tag">n8n</span>
+            <span class="tag">Supabase</span>
+            <span class="tag">Asaas</span>
+            <span class="tag">Trello</span>
+            <span class="tag">WhatsApp</span>
+          </div>
+        </div>
+
+        <aside class="hero-card">
+          <h2>Stack do Projeto</h2>
+          <div class="stack">
+            <div class="stack-item"><strong>n8n</strong>Orquestração dos fluxos</div>
+            <div class="stack-item"><strong>Supabase</strong>Banco de dados e backend</div>
+            <div class="stack-item"><strong>LLM / IA</strong>Atendimento e qualificação</div>
+            <div class="stack-item"><strong>Trello</strong>CRM visual do funil</div>
+            <div class="stack-item"><strong>Asaas</strong>Cobrança e webhook</div>
+            <div class="stack-item"><strong>WhatsApp API</strong>Canal de atendimento</div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="problema">
+      <div class="container">
+        <div class="section-title">
+          <h2>Problema</h2>
+          <p>
+            Pequenos estúdios de yoga geralmente dependem de atendimento manual para responder dúvidas,
+            acompanhar interessados e conduzir o lead até o pagamento.
+          </p>
+        </div>
+
+        <div class="grid-3">
+          <article class="card">
+            <h3>Atendimento repetitivo</h3>
+            <p>Horários, valores, modalidades e aula experimental geram perguntas frequentes no WhatsApp.</p>
+          </article>
+          <article class="card">
+            <h3>Perda de leads</h3>
+            <p>Sem resposta rápida e follow-up, interessados deixam de avançar na jornada.</p>
+          </article>
+          <article class="card">
+            <h3>Baixa organização</h3>
+            <p>Conversas, pagamentos e status do funil ficam espalhados e difíceis de acompanhar.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="solucao">
+      <div class="container">
+        <div class="section-title">
+          <h2>Solução</h2>
+          <p>
+            O ZenFlow AI propõe uma primeira camada inteligente de atendimento, integrando automação,
+            banco de dados, CRM visual, pagamentos e follow-up.
+          </p>
+        </div>
+
+        <div class="grid-2">
+          <article class="card">
+            <h3>O que o agente faz</h3>
+            <ul>
+              <li>Atende interessados via WhatsApp.</li>
+              <li>Qualifica objetivo, experiência e preferência de horário.</li>
+              <li>Recomenda aula, plano ou modalidade.</li>
+              <li>Registra leads, pedidos e interações.</li>
+              <li>Aciona follow-up automático para leads pendentes.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>O que a automação organiza</h3>
+            <ul>
+              <li>Dados no Supabase.</li>
+              <li>Funil visual no Trello.</li>
+              <li>Pedido e link de pagamento via Asaas.</li>
+              <li>Confirmação por webhook.</li>
+              <li>Encaminhamento humano para casos sensíveis.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="workflow" class="flow">
+      <div class="container">
+        <div class="section-title">
+          <h2>Workflow n8n</h2>
+          <p>
+            A imagem abaixo apresenta a versão consolidada do workflow para portfólio, reunindo atendimento,
+            reconhecimento de pagamento e follow-up automático em uma visão única.
+          </p>
+        </div>
+
+        <div class="workflow-img-wrap">
+          <img src="assets/zenflow-workflow-n8n.png" alt="Workflow n8n do projeto ZenFlow AI" />
+        </div>
+      </div>
+    </section>
+
+    <section id="arquitetura">
+      <div class="container">
+        <div class="section-title">
+          <h2>Jornada da automação</h2>
+          <p>
+            A arquitetura foi desenhada para demonstrar uma jornada completa, desde o primeiro contato do lead
+            até o acompanhamento pós-pagamento.
+          </p>
+        </div>
+
+        <div class="timeline">
+          <div class="timeline-item">
+            <div><strong>Entrada pelo WhatsApp</strong><span>O n8n recebe a mensagem via webhook e normaliza os dados do lead.</span></div>
+          </div>
+          <div class="timeline-item">
+            <div><strong>Registro no Supabase</strong><span>O lead é consultado ou criado no banco, preservando histórico e status.</span></div>
+          </div>
+          <div class="timeline-item">
+            <div><strong>CRM visual no Trello</strong><span>Um card representa o lead no funil comercial do estúdio.</span></div>
+          </div>
+          <div class="timeline-item">
+            <div><strong>Atendimento com IA</strong><span>O agente qualifica, responde dúvidas e recomenda aulas ou planos.</span></div>
+          </div>
+          <div class="timeline-item">
+            <div><strong>Pagamento e webhook</strong><span>O Asaas gera cobrança e notifica o n8n quando o pagamento muda de status.</span></div>
+          </div>
+          <div class="timeline-item">
+            <div><strong>Follow-up automático</strong><span>Leads pendentes recebem mensagens em etapas, sem insistência excessiva.</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="documentacao">
+      <div class="container">
+        <div class="section-title">
+          <h2>Documentação do projeto</h2>
+          <p>
+            O repositório contém documentação resumida, arquitetura técnica, workflow n8n, modelagem de dados e cuidados de segurança.
+          </p>
+        </div>
+
+        <div class="grid-3">
+          <a class="card" href="docs/planejamento-resumido.md">
+            <h3>Planejamento</h3>
+            <p>Resumo da visão estratégica, mercado, arquitetura, criação interativa e PDCA.</p>
+          </a>
+          <a class="card" href="docs/arquitetura-tecnica.md">
+            <h3>Arquitetura Técnica</h3>
+            <p>Detalhamento da stack, fluxo geral, tabelas, funil e papel do agente IA.</p>
+          </a>
+          <a class="card" href="docs/workflow-n8n.md">
+            <h3>Workflow n8n</h3>
+            <p>Explicação do arquivo JSON consolidado e da lógica dos blocos de automação.</p>
+          </a>
+          <a class="card" href="database/schema.sql">
+            <h3>Schema Supabase</h3>
+            <p>Script SQL com a estrutura das tabelas previstas para o projeto.</p>
+          </a>
+          <a class="card" href="docs/seguranca-e-limitacoes.md">
+            <h3>Segurança</h3>
+            <p>Cuidados, limitações, placeholders e escopo da versão pública de portfólio.</p>
+          </a>
+          <a class="card" href="n8n/ZenFlow%20AI%20%E2%80%94%20Portfolio.json">
+            <h3>Workflow JSON</h3>
+            <p>Arquivo consolidado do n8n para visualização e validação lógica do fluxo.</p>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section id="seguranca">
+      <div class="container">
+        <div class="notice">
+          <strong>Versão de portfólio:</strong>
+          esta página apresenta uma arquitetura demonstrativa, sem tokens reais, dados pessoais reais,
+          webhooks ativos ou contas produtivas conectadas. Para implantação real, seria necessário configurar
+          credenciais, validar permissões, testar integrações e revisar conformidade com privacidade e LGPD.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <span>ZenFlow AI — Projeto de Portfólio</span>
+      <span>Automação · IA · n8n · Supabase · Asaas · Trello</span>
+    </div>
+  </footer>
+</body>
+</html>
