@@ -1,0 +1,2200 @@
+{
+  "name": "ZenFlow AI — Portfolio",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "zenflow-whatsapp",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        16,
+        416
+      ],
+      "id": "0383a7d0-cfad-42c4-8e81-9899dc61c329",
+      "name": "Webhook WhatsApp",
+      "webhookId": "zenflow-whatsapp-webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "norm-001",
+              "name": "telefone",
+              "value": "={{ $json.body.phone || $json.body.from || $json.body.telefone || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "norm-002",
+              "name": "nome",
+              "value": "={{ $json.body.senderName || $json.body.nome || 'Lead WhatsApp' }}",
+              "type": "string"
+            },
+            {
+              "id": "norm-003",
+              "name": "mensagem",
+              "value": "={{ $json.body.text?.message || $json.body.message || $json.body.mensagem || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "norm-004",
+              "name": "canal",
+              "value": "whatsapp",
+              "type": "string"
+            },
+            {
+              "id": "norm-005",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        416
+      ],
+      "id": "5cd1104d-30bf-49d6-b090-e38fd3a2106b",
+      "name": "Normalizar Dados"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "leads",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "telefone",
+              "condition": "eq",
+              "keyValue": "={{ $json.telefone }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        464,
+        416
+      ],
+      "id": "e5870bd2-31a6-4347-a0c7-3555726d0ac2",
+      "name": "Buscar Lead Supabase"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "cond-001",
+              "leftValue": "={{ $json.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        688,
+        416
+      ],
+      "id": "a94f9f6a-8ed0-48d1-971b-177987070a1b",
+      "name": "Lead Existe?"
+    },
+    {
+      "parameters": {
+        "tableId": "leads",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "nome",
+              "fieldValue": "={{ $('Normalizar Dados').item.json.nome }}"
+            },
+            {
+              "fieldId": "telefone",
+              "fieldValue": "={{ $('Normalizar Dados').item.json.telefone }}"
+            },
+            {
+              "fieldId": "status_lead",
+              "fieldValue": "novo"
+            },
+            {
+              "fieldId": "follow_up_status",
+              "fieldValue": "nao_iniciado"
+            },
+            {
+              "fieldId": "ultima_msg",
+              "fieldValue": "={{ $('Normalizar Dados').item.json.timestamp }}"
+            },
+            {
+              "fieldId": "precisa_humano",
+              "fieldValue": false
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        896,
+        288
+      ],
+      "id": "af826ded-ec6d-4351-a1a4-4aa8e6cb1c35",
+      "name": "Criar Lead Supabase"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "leads",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "telefone",
+              "condition": "eq",
+              "keyValue": "={{ $('Normalizar Dados').item.json.telefone }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "ultima_msg",
+              "fieldValue": "={{ $('Normalizar Dados').item.json.timestamp }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        896,
+        528
+      ],
+      "id": "647ae915-507b-4a2c-a5be-28469608c3dd",
+      "name": "Atualizar Lead Existente"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "merge-001",
+              "name": "lead_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "merge-002",
+              "name": "lead_nome",
+              "value": "={{ $json.nome || $('Normalizar Dados').item.json.nome }}",
+              "type": "string"
+            },
+            {
+              "id": "merge-003",
+              "name": "lead_telefone",
+              "value": "={{ $json.telefone || $('Normalizar Dados').item.json.telefone }}",
+              "type": "string"
+            },
+            {
+              "id": "merge-004",
+              "name": "trello_card_id",
+              "value": "={{ $json.trello_card_id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "merge-005",
+              "name": "mensagem_usuario",
+              "value": "={{ $('Normalizar Dados').item.json.mensagem }}",
+              "type": "string"
+            },
+            {
+              "id": "merge-006",
+              "name": "status_lead",
+              "value": "={{ $json.status_lead || 'novo' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1120,
+        416
+      ],
+      "id": "5cec70d6-5726-4ad0-b37f-22ae79ec6fe1",
+      "name": "Consolidar Dados Lead"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "trello-cond-001",
+              "leftValue": "={{ $json.trello_card_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1344,
+        416
+      ],
+      "id": "1832584a-b2aa-4489-aebf-5860da4ce7c2",
+      "name": "Tem Card Trello?"
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Consolidar Dados Lead').item.json.lead_nome + ' — ' + $('Consolidar Dados Lead').item.json.lead_telefone }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.trello",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        288
+      ],
+      "id": "f86dfdf1-451e-4dbf-bf45-63ecb1ee6ac4",
+      "name": "Criar Card Trello"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "leads",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Consolidar Dados Lead').item.json.lead_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "trello_card_id",
+              "fieldValue": "={{ $json.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1776,
+        288
+      ],
+      "id": "682a85c6-22e5-4c8d-8ce9-559782f8086b",
+      "name": "Salvar Card ID no Supabase"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=# 🧘 ZenFlow AI — Agente Inteligente do Estúdio de Yoga\n\nVocê é o **ZenFlow AI**, agente virtual de atendimento do estúdio de yoga.\nSua missão é **acolher, qualificar e conduzir leads** pelo processo de conhecimento do estúdio, recomendação de modalidade e conversão para aula experimental, plano mensal ou atendimento humano.\n\n---\n\n## 🌿 Regras Gerais\n\n- Falar **exclusivamente em português do Brasil**.\n- Tom **acolhedor, claro e profissional** — nunca frio ou robótico.\n- Fazer **uma pergunta por vez**.\n- **Nunca inventar** valores, horários ou regras que não estejam na base de conhecimento.\n- **Nunca fazer diagnóstico médico** ou prometer cura, resultado terapêutico ou tratamento.\n- **Nunca prometer cura** de doenças ou condições médicas.\n- Usar apenas informações desta base de conhecimento e dos dados retornados pelas tools.\n\n---\n\n## 🚨 Encaminhamento Imediato para Humano\n\nSempre que o lead mencionar qualquer um dos itens abaixo, use a tool `marcar_precisa_humano` e envie a resposta acolhedora de encaminhamento:\n- Dor intensa ou crônica\n- Lesão muscular, óssea ou articular\n- Cirurgia recente ou planejada\n- Gravidez ou pós-parto\n- Condição médica específica (hipertensão, diabetes, fibromialgia, etc.)\n- Crise emocional, ansiedade severa, depressão\n- Reclamação sobre o estúdio ou experiência negativa\n- Pedido direto por atendimento humano\n\n**Resposta acolhedora de encaminhamento:**\n> \"Obrigado por compartilhar isso comigo 🙏. Para que você seja acolhido da melhor forma possível, vou chamar um de nossos atendentes humanos. Você será contatado em breve. Enquanto isso, sinta-se à vontade para perguntar qualquer coisa sobre o estúdio.\"\n\n---\n\n## 📋 Fluxo de Atendimento\n\n### 1. Abertura\n- Cumprimente com gentileza.\n- Pergunte o nome do lead se ainda não souber.\n- Pergunte o que ele(a) está buscando: \"O que te trouxe até nós hoje?\"\n\n### 2. Qualificação\n- Nível de experiência: iniciante, intermediário ou praticante regular?\n- Principal objetivo: relaxamento, flexibilidade, força, meditação, emagrecimento, saúde mental?\n- Preferência de horário: manhã, tarde ou noite? Dia de semana ou fim de semana?\n\n### 3. Recomendação de Modalidade\nBaseie-se nos objetivos do lead:\n- **Iniciante + relaxamento/saúde mental** → Yoga para Iniciantes ou Yoga Restaurativo\n- **Flexibilidade + condicionamento** → Hatha Yoga\n- **Meditação + foco** → Meditação Guiada Online\n- **Qualquer objetivo, sem experiência** → Aula Experimental é sempre uma boa primeira opção\n\n### 4. Apresentação de Planos (use a tool buscar_produtos)\n- Aula Experimental — R$ 30\n- Aula Avulsa — R$ 50\n- Plano Mensal 1x/semana — R$ 160\n- Plano Mensal 2x/semana — R$ 260\n- Plano Livre Mensal — R$ 340\n\n### 5. Confirmação de Interesse e Pagamento\nAo confirmar interesse:\n1. Perguntar forma de pagamento: Pix, Boleto ou Cartão de Crédito\n2. Usar tools para criar pedido e cobrança\n3. Enviar link de pagamento\n\n---\n\n## 🕐 Horários Disponíveis\n- Terça às 19h — Yoga para Iniciantes\n- Sábado às 9h — Yoga para Iniciantes\n- Segunda e quarta às 18h30 — Hatha Yoga\n- Quinta às 20h — Yoga Restaurativo\n- Sexta às 7h — Meditação Guiada Online\n\n---\n\n## 📌 Regras do Estúdio\n- A aula experimental deve ser agendada com antecedência.\n- O aluno deve chegar 10 minutos antes.\n- Recomenda-se roupa confortável.\n- O estúdio fornece tapete, mas o aluno pode trazer o próprio.\n\n---\n\n## 🔧 Tools Disponíveis\n\n- **buscar_lead_por_telefone** — verifica dados do lead\n- **buscar_produtos** — lista modalidades e planos disponíveis\n- **criar_pedido** — registra o pedido no Supabase\n- **criar_cliente_asaas** — cria cliente no Asaas\n- **criar_cobranca_asaas** — gera link de pagamento\n- **atualizar_pedido** — salva link e ID do pagamento\n- **marcar_precisa_humano** — encaminha para atendimento humano\n- **registrar_interacao** — salva a interação no histórico\n- **mover_trello** — atualiza funil Trello\n\n---\n\nDados do lead atual:\nNome: {{ $('Consolidar Dados Lead').item.json.lead_nome }}\nTelefone: {{ $('Consolidar Dados Lead').item.json.lead_telefone }}\nLead ID: {{ $('Consolidar Dados Lead').item.json.lead_id }}\nStatus: {{ $('Consolidar Dados Lead').item.json.status_lead }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2000,
+        416
+      ],
+      "id": "f402dba3-adf5-4c16-8300-e4772c8ea45d",
+      "name": "ZenFlow AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1888,
+        608
+      ],
+      "id": "c8d04297-17fc-47ed-80d8-1d718d64733d",
+      "name": "OpenAI GPT-4o"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Normalizar Dados').item.json.telefone }}",
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        2016,
+        608
+      ],
+      "id": "2d34b3ca-5f6c-4f09-8e14-4d5e81590ad8",
+      "name": "Memória da Conversa"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Busca lead no Supabase pelo telefone",
+        "operation": "getAll",
+        "tableId": "leads",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "telefone",
+              "condition": "eq",
+              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('telefone', 'Telefone do lead para busca', 'string') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        2160,
+        608
+      ],
+      "id": "e19c0515-9782-4b28-9740-ee7a9a07ac42",
+      "name": "buscar_lead_por_telefone"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Busca todos os produtos e planos disponíveis no estúdio de yoga",
+        "operation": "getAll",
+        "tableId": "produtos_planos",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "ativo",
+              "condition": "eq",
+              "keyValue": true
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        2304,
+        608
+      ],
+      "id": "6ec08df2-5c38-4e2e-a49b-83f9ec4bef79",
+      "name": "buscar_produtos"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Cria um novo pedido no Supabase para o lead com o produto escolhido",
+        "tableId": "pedidos",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "lead_id",
+              "fieldValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('lead_id', 'ID do lead na tabela leads do Supabase', 'string') }}"
+            },
+            {
+              "fieldId": "produto_id",
+              "fieldValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('produto_id', 'ID do produto/plano na tabela produtos_planos', 'string') }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "aguardando_pagamento"
+            },
+            {
+              "fieldId": "valor",
+              "fieldValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('valor', 'Valor do pedido em reais', 'number') }}"
+            },
+            {
+              "fieldId": "forma_pagamento",
+              "fieldValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('forma_pagamento', 'Forma de pagamento: PIX, BOLETO ou CREDIT_CARD', 'string') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        2448,
+        608
+      ],
+      "id": "52c57258-1fc5-4cf6-9841-4457bc3ab9e0",
+      "name": "criar_pedido"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Cria um cliente no Asaas para gerar cobranças. Use os dados do lead do Supabase.",
+        "method": "POST",
+        "url": "https://api.asaas.com/v3/customers",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "ASAAS_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ name: $fromAI('nome', 'Nome completo do cliente', 'string'), mobilePhone: $fromAI('telefone', 'Telefone com DDD sem formatação', 'string'), email: $fromAI('email', 'Email do cliente, pode ser vazio', 'string') || undefined }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        2576,
+        608
+      ],
+      "id": "913d5fb8-866e-4f1b-903f-1cba3fa5a071",
+      "name": "criar_cliente_asaas"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Gera cobrança no Asaas e retorna o link de pagamento. Requer customer_id do Asaas, valor e forma de pagamento.",
+        "method": "POST",
+        "url": "https://api.asaas.com/v3/payments",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "ASAAS_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ customer: $fromAI('customer_id', 'ID do cliente no Asaas (cus_...)', 'string'), billingType: $fromAI('billing_type', 'Tipo de cobrança: PIX, BOLETO ou CREDIT_CARD', 'string'), value: $fromAI('valor', 'Valor em reais (número)', 'number'), dueDate: $fromAI('due_date', 'Data de vencimento no formato YYYY-MM-DD', 'string'), description: $fromAI('descricao', 'Descrição da cobrança', 'string') }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        2720,
+        608
+      ],
+      "id": "1937294b-efe3-4146-91e1-b944ea8acc40",
+      "name": "criar_cobranca_asaas"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Atualiza o pedido no Supabase com o ID e link de pagamento do Asaas",
+        "operation": "update",
+        "tableId": "pedidos",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('pedido_id', 'ID do pedido no Supabase', 'string') }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "asaas_customer_id",
+              "fieldValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('asaas_customer_id', 'ID do cliente no Asaas', 'string') }}"
+            },
+            {
+              "fieldId": "asaas_payment_id",
+              "fieldValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('asaas_payment_id', 'ID do pagamento no Asaas', 'string') }}"
+            },
+            {
+              "fieldId": "asaas_link_pagamento",
+              "fieldValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('link_pagamento', 'URL do link de pagamento gerado pelo Asaas', 'string') }}"
+            },
+            {
+              "fieldId": "due_date",
+              "fieldValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('due_date', 'Data de vencimento no formato YYYY-MM-DD', 'string') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        2864,
+        608
+      ],
+      "id": "29ef14b8-b8b7-409a-857e-f8d10ec7b7f5",
+      "name": "atualizar_pedido"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Marca o lead como precisando de atendimento humano no Supabase e move card no Trello. Use quando o lead mencionar dor, lesão, gravidez, cirurgia, crise emocional ou pedir para falar com humano.",
+        "operation": "update",
+        "tableId": "leads",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('lead_id', 'ID do lead no Supabase', 'string') }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "precisa_humano",
+              "fieldValue": true
+            },
+            {
+              "fieldId": "status_lead",
+              "fieldValue": "atendimento_humano"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        3008,
+        608
+      ],
+      "id": "de5c26d3-3426-43f1-aa22-6ff6d649b67a",
+      "name": "marcar_precisa_humano"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Move o card do lead no Trello para uma lista específica do funil. Listas disponíveis: TRELLO_LIST_NOVO_LEAD, TRELLO_LIST_QUALIFICADO, TRELLO_LIST_AGUARDANDO_PAGAMENTO, TRELLO_LIST_PAGO_AGENDADO, TRELLO_LIST_FOLLOWUP, TRELLO_LIST_PERDIDO, TRELLO_LIST_ATENDIMENTO_HUMANO",
+        "operation": "update",
+        "id": {
+          "__rl": true,
+          "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('card_id', 'ID do card no Trello', 'string') }}",
+          "mode": "id"
+        },
+        "updateFields": {
+          "idList": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('lista_id', 'ID da lista destino no Trello. Valores possíveis: TRELLO_LIST_NOVO_LEAD, TRELLO_LIST_QUALIFICADO, TRELLO_LIST_AGUARDANDO_PAGAMENTO, TRELLO_LIST_PAGO_AGENDADO, TRELLO_LIST_FOLLOWUP, TRELLO_LIST_PERDIDO, TRELLO_LIST_ATENDIMENTO_HUMANO', 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.trelloTool",
+      "typeVersion": 1,
+      "position": [
+        3136,
+        608
+      ],
+      "id": "4f9994de-d1f6-4e9e-a9f6-89c38bf98822",
+      "name": "mover_trello"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Registra uma interação do lead no histórico do Supabase",
+        "tableId": "interacoes",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "lead_id",
+              "fieldValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('lead_id', 'ID do lead no Supabase', 'string') }}"
+            },
+            {
+              "fieldId": "canal",
+              "fieldValue": "whatsapp"
+            },
+            {
+              "fieldId": "direcao",
+              "fieldValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('direcao', 'entrada ou saida', 'string') }}"
+            },
+            {
+              "fieldId": "mensagem",
+              "fieldValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('mensagem', 'Texto da mensagem', 'string') }}"
+            },
+            {
+              "fieldId": "intencao_detectada",
+              "fieldValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('intencao', 'Intenção detectada: horarios, valores, aula_experimental, plano_mensal, modalidades, pagamento, humano, caso_sensivel', 'string') }}"
+            },
+            {
+              "fieldId": "agente_respondeu",
+              "fieldValue": true
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        3280,
+        608
+      ],
+      "id": "8f4dda34-0b19-4341-b81c-9ee6c6bf540d",
+      "name": "registrar_interacao"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.z-api.io/instances/ZAPI_INSTANCE_ID/token/ZAPI_TOKEN/send-text",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Client-Token",
+              "value": "ZAPI_CLIENT_TOKEN"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ phone: $('Normalizar Dados').item.json.telefone, message: $json.output }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3424,
+        416
+      ],
+      "id": "e2b67a67-a275-46d5-bfe6-922211ff79fc",
+      "name": "Enviar Resposta WhatsApp"
+    },
+    {
+      "parameters": {
+        "content": "## 🧘 ZenFlow AI — Workflow Principal\nAtendimento via WhatsApp → Qualificação → Recomendação → Pagamento\n\n**Placeholders a substituir:**\n- SUPABASE_CREDENTIAL_ID\n- TRELLO_CREDENTIAL_ID\n- OPENAI_CREDENTIAL_ID\n- ZAPI_INSTANCE_ID / ZAPI_TOKEN / ZAPI_CLIENT_TOKEN\n- ASAAS_API_KEY\n- TRELLO_LIST_*\n\n**Uso recomendado:** versão consolidada para portfólio e validação visual da lógica. Para implantação real, separar em workflows independentes e configurar credenciais.",
+        "height": 352,
+        "width": 600,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f101b800-0b62-4c99-a468-fa8ab6ea3ad1",
+      "name": "Nota ZenFlow Principal"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "zenflow-pagamento",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        16,
+        1120
+      ],
+      "id": "7ca2077c-94cd-426e-84a7-cb203e1c77ce",
+      "name": "Webhook Asaas Pagamento",
+      "webhookId": "zenflow-pagamento-webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ext-001",
+              "name": "evento",
+              "value": "={{ $json.body.event }}",
+              "type": "string"
+            },
+            {
+              "id": "ext-002",
+              "name": "asaas_payment_id",
+              "value": "={{ $json.body.payment.id }}",
+              "type": "string"
+            },
+            {
+              "id": "ext-003",
+              "name": "asaas_customer_id",
+              "value": "={{ $json.body.payment.customer }}",
+              "type": "string"
+            },
+            {
+              "id": "ext-004",
+              "name": "valor",
+              "value": "={{ $json.body.payment.value }}",
+              "type": "number"
+            },
+            {
+              "id": "ext-005",
+              "name": "status_asaas",
+              "value": "={{ $json.body.payment.status }}",
+              "type": "string"
+            },
+            {
+              "id": "ext-006",
+              "name": "data_confirmacao",
+              "value": "={{ $json.body.payment.confirmedDate || $json.body.payment.paymentDate || $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        1120
+      ],
+      "id": "54e65d8a-413b-4e20-88c6-7f0ef8427bf5",
+      "name": "Extrair Dados do Webhook"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "pay-001",
+                    "leftValue": "={{ ['PAYMENT_RECEIVED','PAYMENT_CONFIRMED'].includes($json.evento) }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "pago"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "pay-002",
+                    "leftValue": "={{ $json.evento }}",
+                    "rightValue": "PAYMENT_OVERDUE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "vencido"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "pay-003",
+                    "leftValue": "={{ ['PAYMENT_DELETED','PAYMENT_REFUNDED'].includes($json.evento) }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "cancelado"
+            }
+          ]
+        },
+        "options": {
+          "allMatchingOutputs": false
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        464,
+        1120
+      ],
+      "id": "06784bbf-a491-47e5-ad8b-20d961588313",
+      "name": "Tipo de Evento Asaas"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "pedidos",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "asaas_payment_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.asaas_payment_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        688,
+        960
+      ],
+      "id": "479c61a4-a740-4c34-9ad9-062a12892784",
+      "name": "Buscar Pedido (Pago)"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "pedidos",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "asaas_payment_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Extrair Dados do Webhook').item.json.asaas_payment_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "pago"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        896,
+        960
+      ],
+      "id": "bdf8ee06-9ef9-4ffd-b5d9-3fdf58e5af08",
+      "name": "Atualizar Pedido para Pago"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "leads",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Buscar Pedido (Pago)').item.json.lead_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status_lead",
+              "fieldValue": "pago"
+            },
+            {
+              "fieldId": "follow_up_status",
+              "fieldValue": "pago"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        960
+      ],
+      "id": "32b8044a-90dd-4e91-913e-0dd9265ae2f2",
+      "name": "Atualizar Lead para Pago"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "leads",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Buscar Pedido (Pago)').item.json.lead_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        960
+      ],
+      "id": "190474a5-755f-4e83-ad48-05f335f552a9",
+      "name": "Buscar Dados do Lead (Pago)"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "id": {
+          "__rl": true,
+          "value": "={{ $json.trello_card_id }}",
+          "mode": "id"
+        },
+        "updateFields": {
+          "idList": "TRELLO_LIST_PAGO_AGENDADO"
+        }
+      },
+      "type": "n8n-nodes-base.trello",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        960
+      ],
+      "id": "ab2baa34-473f-4207-bd99-799cea987f22",
+      "name": "Mover Card para Pago/Agendado"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.z-api.io/instances/ZAPI_INSTANCE_ID/token/ZAPI_TOKEN/send-text",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Client-Token",
+              "value": "ZAPI_CLIENT_TOKEN"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ phone: $json.telefone, message: '🎉 Pagamento confirmado, ' + $json.nome + '!\\n\\nEstamos muito felizes em te receber no estúdio 🧘\\nEm breve nossa equipe entrará em contato para confirmar seu agendamento.\\n\\nNos vemos em breve! 🙏✨' }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1776,
+        960
+      ],
+      "id": "b628bec7-0408-44c9-b994-8f627b251642",
+      "name": "Enviar Confirmação de Pagamento WhatsApp"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "pedidos",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "asaas_payment_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.asaas_payment_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        688,
+        1216
+      ],
+      "id": "a147d2fd-179c-434f-9116-bcc1c43ce3f8",
+      "name": "Buscar Pedido (Vencido/Cancelado)"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "pedidos",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "asaas_payment_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Extrair Dados do Webhook').item.json.asaas_payment_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $('Extrair Dados do Webhook').item.json.evento === 'PAYMENT_OVERDUE' ? 'vencido' : 'cancelado' }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        896,
+        1216
+      ],
+      "id": "31ee822d-e17b-40b5-81c4-fcf9b6a77998",
+      "name": "Atualizar Pedido Vencido/Cancelado"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "leads",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Buscar Pedido (Vencido/Cancelado)').item.json.lead_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status_lead",
+              "fieldValue": "sem_resposta"
+            },
+            {
+              "fieldId": "follow_up_status",
+              "fieldValue": "nao_iniciado"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        1216
+      ],
+      "id": "51a79bd1-360c-46ef-8629-3b0d626208b8",
+      "name": "Resetar Lead para Follow-up"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "leads",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Buscar Pedido (Vencido/Cancelado)').item.json.lead_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        1216
+      ],
+      "id": "29cc1140-3551-4d12-bcd2-27337f59a70e",
+      "name": "Buscar Dados do Lead (Vencido)"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "id": {
+          "__rl": true,
+          "value": "={{ $json.trello_card_id }}",
+          "mode": "id"
+        },
+        "updateFields": {
+          "idList": "TRELLO_LIST_FOLLOWUP"
+        }
+      },
+      "type": "n8n-nodes-base.trello",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        1216
+      ],
+      "id": "18f6de0a-4434-4034-9353-748177f57c27",
+      "name": "Mover Card para Follow-up"
+    },
+    {
+      "parameters": {
+        "content": "## 💳 ZenFlow AI — Reconhecimento de Pagamento\nWebhook recebido do Asaas.\n\n**Eventos tratados:**\n- PAYMENT_RECEIVED / PAYMENT_CONFIRMED → Fluxo de confirmação\n- PAYMENT_OVERDUE / PAYMENT_DELETED / PAYMENT_REFUNDED → Fluxo de vencimento/cancelamento\n\n**URL do webhook a configurar no Asaas:**\nhttps://SEU_N8N/webhook/zenflow-pagamento",
+        "height": 324,
+        "width": 560,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        16,
+        752
+      ],
+      "id": "1b7413bb-8787-4d0b-aa09-ba07af572380",
+      "name": "Nota Pagamento"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        1808
+      ],
+      "id": "3a5d5632-0023-4c6d-9d0f-5439a9990d2b",
+      "name": "Schedule Trigger — A cada 1h"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "leads",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status_lead",
+              "condition": "in",
+              "keyValue": "interessado,aguardando_pagamento,sem_resposta"
+            },
+            {
+              "keyName": "precisa_humano",
+              "condition": "eq",
+              "keyValue": false
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        224,
+        1808
+      ],
+      "id": "9d71a25d-0360-4778-8555-48e71eb1cc3a",
+      "name": "Buscar Leads para Follow-up"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "calc-001",
+              "name": "minutos_desde_ultima_msg",
+              "value": "={{ Math.floor((new Date() - new Date($json.ultima_msg)) / 60000) }}",
+              "type": "number"
+            },
+            {
+              "id": "calc-002",
+              "name": "lead_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "calc-003",
+              "name": "lead_nome",
+              "value": "={{ $json.nome }}",
+              "type": "string"
+            },
+            {
+              "id": "calc-004",
+              "name": "lead_telefone",
+              "value": "={{ $json.telefone }}",
+              "type": "string"
+            },
+            {
+              "id": "calc-005",
+              "name": "follow_up_status",
+              "value": "={{ $json.follow_up_status }}",
+              "type": "string"
+            },
+            {
+              "id": "calc-006",
+              "name": "trello_card_id",
+              "value": "={{ $json.trello_card_id }}",
+              "type": "string"
+            },
+            {
+              "id": "calc-007",
+              "name": "status_lead",
+              "value": "={{ $json.status_lead }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        1808
+      ],
+      "id": "34cc5dfd-6e69-4a0d-a632-046de776ef9f",
+      "name": "Calcular Tempo sem Resposta"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "fu-001",
+                    "leftValue": "={{ $json.follow_up_status }}",
+                    "rightValue": "nao_iniciado",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "fu-002",
+                    "leftValue": "={{ $json.minutos_desde_ultima_msg }}",
+                    "rightValue": 30,
+                    "operator": {
+                      "type": "number",
+                      "operation": "gte"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "followup_1"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "fu-003",
+                    "leftValue": "={{ $json.follow_up_status }}",
+                    "rightValue": "followup_1_enviado",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "fu-004",
+                    "leftValue": "={{ $json.minutos_desde_ultima_msg }}",
+                    "rightValue": 1440,
+                    "operator": {
+                      "type": "number",
+                      "operation": "gte"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "followup_2"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "fu-005",
+                    "leftValue": "={{ $json.follow_up_status }}",
+                    "rightValue": "followup_2_enviado",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "fu-006",
+                    "leftValue": "={{ $json.minutos_desde_ultima_msg }}",
+                    "rightValue": 2160,
+                    "operator": {
+                      "type": "number",
+                      "operation": "gte"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "followup_3"
+            }
+          ]
+        },
+        "options": {
+          "allMatchingOutputs": false
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        672,
+        1808
+      ],
+      "id": "8bd82842-c7ec-40ad-942c-54af32f8fa01",
+      "name": "Qual Etapa de Follow-up?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "msg1-001",
+              "name": "mensagem_followup",
+              "value": "=Olá, {{ $json.lead_nome }} 🙏 Tudo bem?\n\nSou o ZenFlow, assistente do nosso estúdio de yoga. Vi que você entrou em contato conosco e queria saber se posso te ajudar com alguma dúvida sobre nossas aulas ou planos.\n\nQualquer coisa, é só responder aqui! 😊",
+              "type": "string"
+            },
+            {
+              "id": "msg1-002",
+              "name": "novo_follow_up_status",
+              "value": "followup_1_enviado",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        880,
+        1632
+      ],
+      "id": "0654f350-a4bb-44a7-ad4b-1a9c4b587c4e",
+      "name": "Montar Follow-up 1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "msg2-001",
+              "name": "mensagem_followup",
+              "value": "=Oi, {{ $json.lead_nome }}! 🌿\n\nPassei para lembrar que temos uma **Aula Experimental** disponível por apenas R$ 30. É uma ótima oportunidade para conhecer o estúdio e descobrir qual modalidade combina mais com você.\n\nSe quiser saber mais sobre horários ou planos, é só me chamar aqui! 🧘",
+              "type": "string"
+            },
+            {
+              "id": "msg2-002",
+              "name": "novo_follow_up_status",
+              "value": "followup_2_enviado",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        880,
+        1808
+      ],
+      "id": "94841f0a-5cf3-4811-880b-76178def3760",
+      "name": "Montar Follow-up 2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "msg3-001",
+              "name": "mensagem_followup",
+              "value": "=Olá, {{ $json.lead_nome }} 💛\n\nÉ nossa última mensagem por agora para não incomodar. Caso queira conhecer o estúdio, explorar nossas modalidades ou tirar qualquer dúvida, estaremos aqui com prazer.\n\nDesejamos leveza e bem-estar para você! 🙏✨",
+              "type": "string"
+            },
+            {
+              "id": "msg3-002",
+              "name": "novo_follow_up_status",
+              "value": "followup_3_enviado",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        880,
+        1968
+      ],
+      "id": "69e0210d-1970-479d-8e05-b483781b9021",
+      "name": "Montar Follow-up 3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.z-api.io/instances/ZAPI_INSTANCE_ID/token/ZAPI_TOKEN/send-text",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Client-Token",
+              "value": "ZAPI_CLIENT_TOKEN"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ phone: $json.lead_telefone, message: $json.mensagem_followup }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1104,
+        1808
+      ],
+      "id": "274763b4-178e-42d2-9af2-d79ab1c55c6c",
+      "name": "Enviar Follow-up WhatsApp"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "leads",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.lead_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "follow_up_status",
+              "fieldValue": "={{ $json.novo_follow_up_status }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        1808
+      ],
+      "id": "fed2628a-5296-4036-9c58-5ba888979ec7",
+      "name": "Atualizar Follow-up Status Supabase"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "id": {
+          "__rl": true,
+          "value": "={{ $json.trello_card_id }}",
+          "mode": "id"
+        },
+        "updateFields": {
+          "idList": "TRELLO_LIST_FOLLOWUP"
+        }
+      },
+      "type": "n8n-nodes-base.trello",
+      "typeVersion": 1,
+      "position": [
+        1552,
+        1808
+      ],
+      "id": "d752aca9-576b-45be-90e5-acd89da15bab",
+      "name": "Mover Card para Follow-up Trello"
+    },
+    {
+      "parameters": {
+        "tableId": "interacoes",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "lead_id",
+              "fieldValue": "={{ $json.lead_id }}"
+            },
+            {
+              "fieldId": "canal",
+              "fieldValue": "whatsapp"
+            },
+            {
+              "fieldId": "direcao",
+              "fieldValue": "saida"
+            },
+            {
+              "fieldId": "mensagem",
+              "fieldValue": "={{ $json.mensagem_followup }}"
+            },
+            {
+              "fieldId": "intencao_detectada",
+              "fieldValue": "follow_up_automatico"
+            },
+            {
+              "fieldId": "agente_respondeu",
+              "fieldValue": true
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        1808
+      ],
+      "id": "d3c25ac8-b164-4c92-b297-305f1ac71a57",
+      "name": "Registrar Follow-up em Interacoes"
+    },
+    {
+      "parameters": {
+        "content": "## ⏰ ZenFlow AI — Follow-up Automático\nRoda a cada 1h e verifica leads em aberto.\n\n**Etapas:**\n- Follow-up 1: após 30 min sem resposta\n- Follow-up 2: após 24h (1440 min)\n- Follow-up 3: após 36h (2160 min)\n\nAjuste os tempos conforme a estratégia do estúdio.",
+        "height": 320,
+        "width": 500,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        1440
+      ],
+      "id": "e0fba903-3fd0-4811-b82c-d04b6d00a847",
+      "name": "Nota Follow-up"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Dados": {
+      "main": [
+        [
+          {
+            "node": "Buscar Lead Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Lead Supabase": {
+      "main": [
+        [
+          {
+            "node": "Lead Existe?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead Existe?": {
+      "main": [
+        [
+          {
+            "node": "Criar Lead Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Atualizar Lead Existente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar Lead Supabase": {
+      "main": [
+        [
+          {
+            "node": "Consolidar Dados Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Lead Existente": {
+      "main": [
+        [
+          {
+            "node": "Consolidar Dados Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consolidar Dados Lead": {
+      "main": [
+        [
+          {
+            "node": "Tem Card Trello?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem Card Trello?": {
+      "main": [
+        [
+          {
+            "node": "Criar Card Trello",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ZenFlow AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar Card Trello": {
+      "main": [
+        [
+          {
+            "node": "Salvar Card ID no Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar Card ID no Supabase": {
+      "main": [
+        [
+          {
+            "node": "ZenFlow AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ZenFlow AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Enviar Resposta WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI GPT-4o": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "ZenFlow AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memória da Conversa": {
+      "ai_memory": [
+        [
+          {
+            "node": "ZenFlow AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "buscar_lead_por_telefone": {
+      "ai_tool": [
+        [
+          {
+            "node": "ZenFlow AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "buscar_produtos": {
+      "ai_tool": [
+        [
+          {
+            "node": "ZenFlow AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "criar_pedido": {
+      "ai_tool": [
+        [
+          {
+            "node": "ZenFlow AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "criar_cliente_asaas": {
+      "ai_tool": [
+        [
+          {
+            "node": "ZenFlow AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "criar_cobranca_asaas": {
+      "ai_tool": [
+        [
+          {
+            "node": "ZenFlow AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "atualizar_pedido": {
+      "ai_tool": [
+        [
+          {
+            "node": "ZenFlow AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "marcar_precisa_humano": {
+      "ai_tool": [
+        [
+          {
+            "node": "ZenFlow AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "mover_trello": {
+      "ai_tool": [
+        [
+          {
+            "node": "ZenFlow AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "registrar_interacao": {
+      "ai_tool": [
+        [
+          {
+            "node": "ZenFlow AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Asaas Pagamento": {
+      "main": [
+        [
+          {
+            "node": "Extrair Dados do Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Dados do Webhook": {
+      "main": [
+        [
+          {
+            "node": "Tipo de Evento Asaas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Pedido (Pago)": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Pedido para Pago",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Pedido para Pago": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Lead para Pago",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Lead para Pago": {
+      "main": [
+        [
+          {
+            "node": "Buscar Dados do Lead (Pago)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Dados do Lead (Pago)": {
+      "main": [
+        [
+          {
+            "node": "Mover Card para Pago/Agendado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mover Card para Pago/Agendado": {
+      "main": [
+        [
+          {
+            "node": "Enviar Confirmação de Pagamento WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Pedido (Vencido/Cancelado)": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Pedido Vencido/Cancelado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Pedido Vencido/Cancelado": {
+      "main": [
+        [
+          {
+            "node": "Resetar Lead para Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resetar Lead para Follow-up": {
+      "main": [
+        [
+          {
+            "node": "Buscar Dados do Lead (Vencido)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Dados do Lead (Vencido)": {
+      "main": [
+        [
+          {
+            "node": "Mover Card para Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger — A cada 1h": {
+      "main": [
+        [
+          {
+            "node": "Buscar Leads para Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Leads para Follow-up": {
+      "main": [
+        [
+          {
+            "node": "Calcular Tempo sem Resposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular Tempo sem Resposta": {
+      "main": [
+        [
+          {
+            "node": "Qual Etapa de Follow-up?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Follow-up 1": {
+      "main": [
+        [
+          {
+            "node": "Enviar Follow-up WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Follow-up 2": {
+      "main": [
+        [
+          {
+            "node": "Enviar Follow-up WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Follow-up 3": {
+      "main": [
+        [
+          {
+            "node": "Enviar Follow-up WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Follow-up WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Follow-up Status Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Follow-up Status Supabase": {
+      "main": [
+        [
+          {
+            "node": "Mover Card para Follow-up Trello",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mover Card para Follow-up Trello": {
+      "main": [
+        [
+          {
+            "node": "Registrar Follow-up em Interacoes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tipo de Evento Asaas": {
+      "main": [
+        [
+          {
+            "node": "Buscar Pedido (Pago)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar Pedido (Vencido/Cancelado)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar Pedido (Vencido/Cancelado)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qual Etapa de Follow-up?": {
+      "main": [
+        [
+          {
+            "node": "Montar Follow-up 1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Montar Follow-up 2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Montar Follow-up 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "39e58e2f-5a0e-4c4b-8c14-4be58dc5b0a2",
+  "meta": {
+    "instanceId": "ee1adee5294100a65fa592c9bc92b802f3b7b6b3abe4c91379800a19c38d97b6"
+  },
+  "nodeGroups": [],
+  "id": "tckkY4vwhgStxMKR",
+  "tags": [
+    {
+      "updatedAt": "2026-05-28T09:29:48.430Z",
+      "createdAt": "2026-05-28T09:29:48.430Z",
+      "id": "1BwZ9943yCUYqzdw",
+      "name": "ZenFlow AI"
+    }
+  ]
+}
